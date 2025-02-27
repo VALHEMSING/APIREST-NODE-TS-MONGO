@@ -8,7 +8,6 @@ import { IUser } from "@interfaces/user.interfaces";
 export interface AuthRequest extends Request {
     user?: IUser; // Agregar el usuario autenticado al request
 }
-
 export const authMiddleware = async (
     req: AuthRequest,
     res: Response,
@@ -22,6 +21,11 @@ export const authMiddleware = async (
             token = req.cookies.token;
         } else if (req.headers.authorization?.startsWith("Bearer ")) {
             token = req.headers.authorization.split(" ")[1];
+        }
+
+        // 🔹 Si no hay token y es la ruta de logout, no renovar el token
+        if (!token && req.path === "/logout") {
+            return next(); // Permitir que se cierre la sesión sin renovar el token
         }
 
         if (!token) {
@@ -60,33 +64,25 @@ const handleTokenRenewal = async (
     next: NextFunction
 ) => {
     try {
-        // 🔹 Obtener el refreshToken de la cookie
         const { refreshToken } = req.cookies;
         if (!refreshToken) {
             return res.status(401).json({ message: "Refresh token no proporcionado." });
         }
 
-        // 🔹 Verificar el refreshToken
         const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as { id: string };
-
-        // 🔹 Buscar al usuario en la base de datos
         const user = await User.findById(decoded.id);
         if (!user) {
             return res.status(401).json({ message: "Usuario no encontrado." });
         }
 
-        // 🔹 Verificar que el refreshToken sea válido
         if (user.refreshToken !== refreshToken) {
             return res.status(401).json({ message: "Refresh token inválido o expirado." });
         }
 
-        // 🔹 Generar un nuevo accessToken
+        // Generar un nuevo accessToken
         const newAccessToken = generateAccestoken(user);
-
-        // 🔹 Adjuntar el usuario al objeto de solicitud
         req.user = user;
 
-        // Devolver el nuevo accessToken al cliente
         return res.json({ message: "Token renovado", accessToken: newAccessToken });
     } catch (error: any) {
         console.error(`Error en handleTokenRenewal: ${error.message}`);

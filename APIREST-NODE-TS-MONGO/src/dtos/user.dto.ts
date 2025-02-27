@@ -12,7 +12,7 @@ export interface CreateUserDto extends IUser {
     email: string;
     password: string;
     roles: ERoles[]
-    refreshToken?: string[]    
+    refreshToken?: string  
 }
 
 export interface UpdateUserDto {
@@ -22,5 +22,5 @@ export interface UpdateUserDto {
     email?: string;
     password?: string;
     roles?: ERoles[]
-    refreshToken?: string[]
+    refreshToken?: string
 }

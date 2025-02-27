@@ -1,6 +1,8 @@
 import express, { Application } from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
+import morgan from "morgan";
 
 import { PORT } from "./enviroments";
 import connectDB from "./db";
@@ -23,6 +25,7 @@ class Server {
         this.app = express()
         this.port = Number(PORT)
         this.app.use(express.json()) // Para que todo lo reciba en formato json
+        this.app.use(cookieParser()) // Para que pueda leer las cookies
 
 
         // Métodos iniciales
@@ -34,6 +37,7 @@ class Server {
     routes(){
         this.app.use(this.apiPaths.users, userRoutes, )
         this.app.use(this.apiPaths.auth,  authRoutes,)
+
     }
 
 
@@ -41,11 +45,19 @@ class Server {
     // Middlewares
     middlewares(){
         this.app.use(cors({
-            origin: "*",
+            origin: "http://localhost:5173",
             methods: ["GET", "POST", "PUT", "DELETE"],
-            credentials: true, // Habilitar el envío de cookies a través de CORS
+            allowedHeaders: ["Content-Type", "Authorization"],
+            credentials: true,
         }))
-        this.app.use(cookieParser()) // Para que pueda leer las cookies
+
+        this.app.use(rateLimit({
+            windowMs: 15 * 60 * 1000, // 15 minutos
+            max: 100, // Limite de peticiones
+            message: "Has hecho demasiadas peticiones, intenta de nuevo en 15 minutos"
+        }))
+
+        this.app.use(morgan("dev"))
     }
 
 
@@ -62,4 +74,4 @@ class Server {
 }
 
 
-export default Server;
+export default new Server;

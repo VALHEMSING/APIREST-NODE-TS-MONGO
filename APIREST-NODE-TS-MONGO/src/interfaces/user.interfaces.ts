@@ -11,5 +11,5 @@ export interface IUser extends Document {
     password: string;
     estado?: boolean;
     roles: ERoles[];
-    refreshToken?: string[]
+    refreshToken?: string
 }
